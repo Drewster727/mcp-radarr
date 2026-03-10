@@ -37,7 +37,36 @@ func (h *handlers) lookupMovie(ctx context.Context, req mcp.CallToolRequest) (*m
 		return mcp.NewToolResultText(fmt.Sprintf("No movies found matching %q", title)), nil
 	}
 
-	data, err := json.MarshalIndent(movies, "", "  ")
+	type lookupResult struct {
+		InLibrary bool   `json:"in_library"`
+		ID        int    `json:"id,omitempty"`
+		Title     string `json:"title"`
+		Year      int    `json:"year"`
+		Status    string `json:"status,omitempty"`
+		Overview  string `json:"overview,omitempty"`
+		ImdbID    string `json:"imdbId,omitempty"`
+		TmdbID    int    `json:"tmdbId"`
+		HasFile   bool   `json:"has_file,omitempty"`
+		Monitored bool   `json:"monitored,omitempty"`
+	}
+
+	results := make([]lookupResult, 0, len(movies))
+	for _, m := range movies {
+		results = append(results, lookupResult{
+			InLibrary: m.ID > 0,
+			ID:        m.ID,
+			Title:     m.Title,
+			Year:      m.Year,
+			Status:    m.Status,
+			Overview:  m.Overview,
+			ImdbID:    m.ImdbID,
+			TmdbID:    m.TmdbID,
+			HasFile:   m.HasFile,
+			Monitored: m.Monitored,
+		})
+	}
+
+	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
 		return mcp.NewToolResultError("failed to serialize results"), nil
 	}
@@ -103,6 +132,11 @@ func (h *handlers) addMovie(ctx context.Context, req mcp.CallToolRequest) (*mcp.
 		year = int(y)
 	}
 
+	var tmdbID int
+	if t, ok := req.Params.Arguments["tmdb_id"].(float64); ok && t > 0 {
+		tmdbID = int(t)
+	}
+
 	searchForMovie := true
 	if s, ok := req.Params.Arguments["search_for_movie"].(bool); ok {
 		searchForMovie = s
@@ -157,6 +191,19 @@ func (h *handlers) addMovie(ctx context.Context, req mcp.CallToolRequest) (*mcp.
 	movies := lr.movies
 	if len(movies) == 0 {
 		return mcp.NewToolResultText(fmt.Sprintf("No movies found matching %q", title)), nil
+	}
+
+	// Narrow by tmdb_id when provided — most precise disambiguation.
+	if tmdbID > 0 {
+		var filtered []radarr.Movie
+		for _, m := range movies {
+			if m.TmdbID == tmdbID {
+				filtered = append(filtered, m)
+			}
+		}
+		if len(filtered) > 0 {
+			movies = filtered
+		}
 	}
 
 	// Narrow by year when provided.

@@ -40,6 +40,12 @@ test/integration/
   integration_test.go       End-to-end tests against a stateful in-memory mock Radarr; build tag: integration
 ```
 
+## Development rules
+
+- **Always build after code changes.** Any change to `.go` files must be followed immediately by `go build -o mcp-radarr ./cmd/server` to verify compilation. Do not consider a task complete if the build has not been confirmed clean.
+- **Tests are mandatory.** Any code change must be accompanied by updates to affected tests. If new behaviour is introduced that isn't covered by an existing test, write the test first, then implement the change. Always run `go test ./internal/...` (and the integration suite when relevant) before considering a task complete.
+- **MCP tool changes require schema sync.** Adding, removing, or modifying a tool — its parameters, description, or behaviour — must be reflected in the tool registration in `internal/mcpserver/server.go`. The description is the contract the LLM uses to pick the right tool; keep it accurate and unambiguous. After any tool change, reconnect the MCP server to verify the updated schema is live.
+
 ## Key design decisions
 
 - **Read-only by default.** `update_movie` and `delete_movie` are only registered when `RADARR_ALLOW_MUTATIONS=true`. No runtime guard is needed inside the handlers — unregistered tools are invisible to the agent.
