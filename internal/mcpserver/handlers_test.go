@@ -258,6 +258,49 @@ func TestAddMovie_MissingTitle(t *testing.T) {
 	}
 }
 
+func TestBulkAddMovies(t *testing.T) {
+	profiles := []radarr.QualityProfile{{ID: 1, Name: "Any"}}
+	lookup1 := []radarr.Movie{{Title: "Dune", Year: 2021, TmdbID: 438631, TitleSlug: "dune-2021"}}
+	lookup2 := []radarr.Movie{{ID: 10, Title: "The Matrix", Year: 1999, TmdbID: 603}}
+	added := radarr.Movie{ID: 42, Title: "Dune", Year: 2021, TmdbID: 438631, QualityProfileID: 1}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/api/v3/qualityprofile":
+			json.NewEncoder(w).Encode(profiles)
+		case r.URL.Path == "/api/v3/movie/lookup" && strings.Contains(r.URL.RawQuery, "Dune"):
+			json.NewEncoder(w).Encode(lookup1)
+		case r.URL.Path == "/api/v3/movie/lookup" && strings.Contains(r.URL.RawQuery, "Matrix"):
+			json.NewEncoder(w).Encode(lookup2)
+		case r.URL.Path == "/api/v3/movie" && r.Method == http.MethodPost:
+			json.NewEncoder(w).Encode(added)
+		default:
+			json.NewEncoder(w).Encode([]radarr.Movie{})
+		}
+	}))
+	defer srv.Close()
+
+	movies := []any{
+		map[string]any{"title": "Dune", "year": float64(2021)},
+		map[string]any{"title": "The Matrix", "year": 1999}, // Test with int
+		map[string]any{"title": "NonExistent"},
+	}
+
+	result, err := newHandlers(srv, false).bulkAddMovies(context.Background(), callArgs("movies", movies))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var results []any
+	if err := json.Unmarshal([]byte(resultText(result)), &results); err != nil {
+		t.Fatalf("unmarshal result: %v", err)
+	}
+
+	if len(results) != 3 {
+		t.Errorf("expected 3 results, got %d", len(results))
+	}
+}
+
 // ── update_movie ──────────────────────────────────────────────────────────────
 
 func TestUpdateMovie(t *testing.T) {
