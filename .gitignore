@@ -1,3 +1,4 @@
 mcp-radarr
 .env
 .env.local
+.gemini/
