@@ -16,7 +16,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Printf("starting Radarr MCP Server — quality profile: %q, mutations: %v",
+	log.Printf("starting mcp-radarr — quality profile: %q, mutations: %v",
 		cfg.DefaultQualityProfile, cfg.AllowMutations)
 
 	client := radarr.NewClient(cfg.RadarrURL, cfg.APIKey)

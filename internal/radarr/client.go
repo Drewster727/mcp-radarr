@@ -139,6 +139,17 @@ func (c *Client) LookupMovies(ctx context.Context, term string) ([]Movie, error)
 	return movies, c.do(req, &movies)
 }
 
+// LookupMovieByTmdbID searches TMDB (via Radarr) for a single movie by its TMDB ID.
+func (c *Client) LookupMovieByTmdbID(ctx context.Context, tmdbID int) (*Movie, error) {
+	path := fmt.Sprintf("/movie/lookup/tmdb?tmdbId=%d", tmdbID)
+	req, err := c.newRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	var movie Movie
+	return &movie, c.do(req, &movie)
+}
+
 // AddMovie adds a movie to the Radarr library and returns the created resource.
 func (c *Client) AddMovie(ctx context.Context, movie *Movie) (*Movie, error) {
 	req, err := c.newRequest(ctx, http.MethodPost, "/movie", movie)

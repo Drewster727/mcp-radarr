@@ -13,6 +13,7 @@ Radarr has a capable API but no native way for an AI agent to use it. This serve
 | `lookup_movie` | Search TMDB via Radarr by title (+ optional year). Results include whether the movie is already in your library. | ✅ |
 | `get_movies` | List library movies. Filterable by `downloaded`, `monitored`, and `year`. | ✅ |
 | `add_movie` | Add a movie using the default quality profile. Returns a disambiguation list when multiple TMDB results match. | ✅ |
+| `bulk_add` | Ensure multiple movies are in the Radarr library. Accepts a list of movies with title, optional year and tmdb_id. | ✅ |
 | `update_movie` | Change a movie's monitored state or quality profile. | Requires `RADARR_ALLOW_MUTATIONS=true` |
 | `delete_movie` | Remove a movie from Radarr (optionally deletes files). | Requires `RADARR_ALLOW_MUTATIONS=true` |
 
