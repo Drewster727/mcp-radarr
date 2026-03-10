@@ -1,0 +1,3 @@
+mcp-radarr
+*.env
+.env*
